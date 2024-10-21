@@ -14,6 +14,9 @@ contract HalalDeFiToken is ERC20, ReentrancyGuard {
     // Tax percentage (e.g., 1% tax on all transfers, except for excluded accounts)
     uint256 public taxPercent;
 
+    // Boolean flag to check if ownership has been renounced
+    bool public isOwnerRenounced = false;
+
     // Mapping to track addresses that are excluded from tax (e.g., owner, treasury)
     mapping(address => bool) private _isExcludedFromFee;
 
@@ -37,6 +40,11 @@ contract HalalDeFiToken is ERC20, ReentrancyGuard {
 
         _isExcludedFromFee[owner] = true;
         _isExcludedFromFee[treasuryWallet] = true;
+    }
+
+    // Getter function to check if an account is excluded from tax
+    function isExcludedFromFee(address account) public view returns (bool) {
+        return _isExcludedFromFee[account];
     }
 
     // Custom transfer function to handle tax deduction
@@ -89,13 +97,12 @@ contract HalalDeFiToken is ERC20, ReentrancyGuard {
     // Allows the owner to renounce ownership (irreversible)
     function renounceOwnership() external onlyOwner {
         emit OwnershipRenounced(owner);
-        owner = address(0);
+        isOwnerRenounced = true;
     }
 
-    // Modifier to restrict access to the owner
+    // Modifier to restrict access to the owner, only if ownership has not been renounced
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner can call this function");
+        require(msg.sender == owner && !isOwnerRenounced, "Only owner can call this function");
         _;
     }
 }
-
